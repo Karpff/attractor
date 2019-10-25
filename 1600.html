@@ -1,0 +1,316 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<title>1600</title>
+	<style>
+		html, body
+		{
+			margin: 0;
+			padding: 0;
+			overflow: hidden;
+		}
+		#force
+		{
+			color: white;
+			opacity: 0.5;
+			position: absolute;
+			bottom: 25px;
+			right: 5px;
+		}
+		#air
+		{
+			color: white;
+			opacity: 0.5;
+			position: absolute;
+			bottom: 5px;
+			right: 5px;
+		}
+	</style>
+</head>
+<body>
+	<canvas id="cnvs"></canvas>
+	<span id="force">Force: 10</span>
+	<span id="air">Air Resistance: 0.001</span>
+
+	<script>
+
+	var canvas = document.getElementById("cnvs");
+	var c = canvas.getContext("2d");
+	canvas.width = window.innerWidth;
+	canvas.height = window.innerHeight;
+
+	//config
+	var acceleration = 0.000003;
+	var maxSpeed = 1;
+
+	var curX = 0;
+	var curY = 0;
+	var mouseX = 0;
+	var mouseY = 0;
+	var atract = 0;
+	var repulse = 0;
+	var maxDistance = 0;
+	var curWave = 0;
+	var frames = 0;
+	var back = 0;
+	var backing = -1;
+	var force = 10;
+	var airS = "0.001";
+	var airN = 2;
+	var air = 0.001;
+
+	window.addEventListener('mousemove', function(e)
+	{
+		mouseX = e.x;
+		mouseY = e.y;
+	});
+
+	window.addEventListener('keydown', function(e)
+	{
+		if(e.keyCode == '32' && back == 0)
+		{
+			back = 50;
+		}
+		if(e.keyCode == '107' || e.keyCode == '187')
+		{
+			force++;
+		}
+		if(e.keyCode == '109' || e.keyCode == '189')
+		{
+			force--;
+		}
+		if(e.keyCode == '48')
+		{
+			airN--;
+			if(airN < 0)airN=0;
+			airS = "0.";
+			for(var i=0;i<airN;i++){airS += "0";}
+			airS += "1";
+			air = parseFloat(airS);
+		}
+		if(e.keyCode == '57')
+		{
+			airN++;
+			if(airN > 3)airN=3;
+			airS = "0.";
+			for(var i=0;i<airN;i++){airS += "0";}
+			airS += "1";
+			air = parseFloat(airS);
+		}
+		if(force < 1)force = 1;
+		if(force > 100)force = 100;
+		document.getElementById("force").innerHTML = "Force: "+force;
+		document.getElementById("air").innerHTML = "Air Resistance: "+air;
+	});
+
+	window.addEventListener('mousedown', function(e)
+	{
+		if(e.button == 0)
+		{
+			atract = 1;
+			repulse = 0;
+		}
+		else if(e.button == 2)
+		{
+			repulse = 1;
+			atract = 0;
+		}
+		mouseX = e.x;
+		mouseY = e.y;
+	});
+
+	window.addEventListener('mouseup', function(e)
+	{
+		if(e.button == 0)
+		{
+			atract = 0;
+		}
+		else if(e.button == 2)
+		{
+			repulse = 0;
+		}
+	});
+
+	canvas.addEventListener('contextmenu', event => event.preventDefault());
+
+	function getDistance(x,y,x2,y2)
+	{
+		return Math.sqrt(Math.abs(x-x2)*Math.abs(x-x2)+Math.abs(y-y2)*Math.abs(y-y2));
+	}
+
+	function point(a,b,d)
+	{
+		this.initialX = a;
+		this.initialY = b;
+		this.x = a;
+		this.y = b;
+		this.spdX = 0;
+		this.spdY = 0;
+		this.accX = 0;
+		this.accY = 0;
+		this.color = "hsl("+d*12+",100%,50%)";
+
+		this.back = function()
+		{
+			if(back == 50)
+			{
+				this.spdX = -(this.x - this.initialX)/50;
+				this.spdY = -(this.y - this.initialY)/50;
+				this.x += this.spdX;
+				this.y += this.spdY;
+			}
+			else if(back == 1)
+			{
+				this.x = this.initialX;
+				this.y = this.initialY;
+				this.spdX = 0;
+				this.spdY = 0;
+			}
+			else
+			{
+				this.x += this.spdX;
+				this.y += this.spdY;
+			}
+			this.draw();
+		}
+		this.update = function()
+		{
+			if(atract == 1)
+			{
+				var distance = getDistance(mouseX,mouseY,this.x,this.y);
+				var totalSpeed = maxDistance/distance*acceleration*force;
+				if(totalSpeed > 10)totalSpeed = 10;
+				this.accX = (mouseX - this.x)*totalSpeed;
+				this.accY = (mouseY - this.y)*totalSpeed;
+			}
+			if(repulse == 1)
+			{
+				var distance = getDistance(mouseX,mouseY,this.x,this.y);
+				var totalSpeed = maxDistance/distance*acceleration*force;
+				if(totalSpeed > 10)totalSpeed = 10;
+				this.accX = -(mouseX - this.x)*totalSpeed;
+				this.accY = -(mouseY - this.y)*totalSpeed;
+			}
+			this.spdX += this.accX;
+			this.spdY += this.accY;
+			this.spdX = this.spdX - this.spdX*air;
+			this.spdY = this.spdY - this.spdY*air;
+			this.x += this.spdX;
+			this.y += this.spdY;
+			if(this.x > canvas.width)this.spdX = -Math.abs(this.spdX);
+			if(this.x < 0)this.spdX = Math.abs(this.spdX);
+			if(this.y > canvas.height)this.spdY = -Math.abs(this.spdY);
+			if(this.y < 0)this.spdY = Math.abs(this.spdY);
+			this.accX = 0;
+			this.accY = 0;
+			this.draw();
+		}
+
+		this.draw = function()
+		{
+			c.beginPath();
+			c.arc(this.x,this.y,2,0,Math.PI*2);
+			c.fillStyle = this.color;
+			c.fill();
+		}
+	}
+
+	function wave(s,o,d)
+	{
+		this.size = s;
+		this.opacity = o;
+		this.direction = d;
+
+		this.update = function()
+		{
+			if(this.direction == "in")
+			{
+				this.size-=1;
+				this.opacity += 0.02;
+				if(this.size < 0)this.size = 0;
+			}
+			else if(this.direction == "out")
+			{
+				this.size+=1;
+				this.opacity -= 0.03;
+				if(this.size > 30)this.size = 30;
+			}
+			this.draw();
+		}
+
+		this.draw = function()
+		{
+			c.beginPath()
+			c.arc(mouseX,mouseY,this.size,0,Math.PI*2);
+			c.strokeStyle = "rgba(255,255,255,"+this.opacity+")";
+			c.stroke();
+		}
+	}
+
+	var points = [];
+	var waves = [];
+
+	function init()
+	{
+		curX = canvas.width/2 - 80;
+		curY = canvas.height/2 - 80;
+		maxDistance = getDistance(0,0,canvas.width,canvas.height);
+
+		for(var i=0;i<40;i++)
+		{
+			for(var j=0;j<40;j++)
+			{
+				points.push(new point(curX,curY,i+j));
+				curX+=4;
+			}
+			curX = canvas.width/2 - 80;
+			curY+=4;
+		}
+	}
+	init();
+
+	function animate()
+	{
+		requestAnimationFrame(animate);
+		c.fillStyle = "#030304";
+		c.fillRect(0,0,canvas.width,canvas.height);
+		if(back > 0)
+		{
+			for(var i=0;i<1600;i++)
+			{
+				points[i].back();
+			}
+			back--;
+		}
+		else
+		{
+			for(var i=0;i<1600;i++)
+			{
+				points[i].update();
+			}
+		}
+		if(atract == 1 && frames%5 == 0)
+		{
+			waves[curWave] = new wave(30,0,"in");
+			curWave++;
+			if(curWave > 200)curWave = 0;
+		}
+		else if(repulse == 1 && frames%5 == 0)
+		{
+			waves[curWave] = new wave(0,0.8,"out");
+			curWave++;
+			if(curWave > 200)curWave = 0;
+		}
+		for(var i=0;i<waves.length;i++)
+		{
+			waves[i].update();
+		}
+
+
+		frames++;
+	}
+	animate();
+
+	</script>
+</body>
