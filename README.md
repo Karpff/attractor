@@ -2,10 +2,10 @@
 
 Controls: 
 
-Attract: LPM
-Repel: RPM
-Increase Power: +
-Decrease Power: -
-Increase Air Resistance: )
-Decrease Air Resistance: (
+Attract: LPM<br>
+Repel: RPM<br>
+Increase Power: +<br>
+Decrease Power: -<br>
+Increase Air Resistance: )<br>
+Decrease Air Resistance: (<br>
 Reset: Space
